@@ -1,0 +1,115 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class Main {
+    // Database connection details
+    private static final String URL = "jdbc:mysql://localhost:3306/ParkingLotDB"; // Database name
+    private static final String USER = "root"; // MySQL username
+    private static final String PASSWORD = "MH907005"; // MySQL password
+
+    public static void main(String[] args) {
+        // Connect to the database
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+            System.out.println("Connected to the database!");
+
+            // Insert sample data
+            insertSampleData(conn);
+
+            // Retrieve and display data from all tables
+            retrieveData(conn);
+
+        } catch (SQLException e) {
+            System.out.println("Database connection error: " + e.getMessage());
+        }
+    }
+
+    // Method to insert sample data into Users, ParkingSpots, and Reservations tables
+    private static void insertSampleData(Connection conn) {
+        String insertUser = "INSERT INTO Users (name, email, password, user_type) VALUES (?, ?, ?, ?)";
+        String insertSpot = "INSERT INTO ParkingSpots (spot_number) VALUES (?)";
+        String insertReservation = "INSERT INTO Reservations (user_id, spot_id, reservation_time) VALUES (?, ?, NOW())";
+
+        try (PreparedStatement userStmt = conn.prepareStatement(insertUser);
+             PreparedStatement spotStmt = conn.prepareStatement(insertSpot);
+             PreparedStatement reservationStmt = conn.prepareStatement(insertReservation)) {
+
+            // Insert Users
+            userStmt.setString(1, "John Doe");
+            userStmt.setString(2, "john@example.com");
+            userStmt.setString(3, "password123");
+            userStmt.setString(4, "customer");
+            userStmt.executeUpdate();
+
+            userStmt.setString(1, "Jane Smith");
+            userStmt.setString(2, "jane@example.com");
+            userStmt.setString(3, "securepass");
+            userStmt.setString(4, "admin");
+            userStmt.executeUpdate();
+
+            // Insert Parking Spots
+            for (int i = 1; i <= 5; i++) {
+                spotStmt.setInt(1, 100 + i);
+                spotStmt.executeUpdate();
+            }
+
+            // Insert Reservations (assuming user_id and spot_id are valid)
+            reservationStmt.setInt(1, 1); // Assuming user_id 1 is valid
+            reservationStmt.setInt(2, 1); // Assuming spot_id 1 is valid
+            reservationStmt.executeUpdate();
+
+            reservationStmt.setInt(1, 2); // Assuming user_id 2 is valid
+            reservationStmt.setInt(2, 2); // Assuming spot_id 2 is valid
+            reservationStmt.executeUpdate();
+
+            System.out.println("Sample data inserted!");
+
+        } catch (SQLException e) {
+            System.out.println("Error inserting sample data: " + e.getMessage());
+        }
+    }
+
+    // Method to retrieve and display data from Users, ParkingSpots, and Reservations tables
+    private static void retrieveData(Connection conn) {
+        String selectUsers = "SELECT * FROM Users";
+        String selectSpots = "SELECT * FROM ParkingSpots";
+        String selectReservations = "SELECT * FROM Reservations";
+
+        try (PreparedStatement userStmt = conn.prepareStatement(selectUsers);
+             ResultSet userRs = userStmt.executeQuery();
+             PreparedStatement spotStmt = conn.prepareStatement(selectSpots);
+             ResultSet spotRs = spotStmt.executeQuery();
+             PreparedStatement reservationStmt = conn.prepareStatement(selectReservations);
+             ResultSet reservationRs = reservationStmt.executeQuery()) {
+
+            // Display Users
+            System.out.println("Users:");
+            while (userRs.next()) {
+                System.out.println("ID: " + userRs.getInt("user_id") + ", Name: " + userRs.getString("name")
+                        + ", Email: " + userRs.getString("email") + ", User Type: " + userRs.getString("user_type"));
+            }
+
+            // Display Parking Spots
+            System.out.println("\nParking Spots:");
+            while (spotRs.next()) {
+                System.out.println("Spot ID: " + spotRs.getInt("spot_id") + ", Spot Number: " + spotRs.getInt("spot_number")
+                        + ", Available: " + spotRs.getBoolean("is_available"));
+            }
+
+            // Display Reservations
+            System.out.println("\nReservations:");
+            while (reservationRs.next()) {
+                System.out.println("Reservation ID: " + reservationRs.getInt("reservation_id") +
+                        ", User ID: " + reservationRs.getInt("user_id") +
+                        ", Spot ID: " + reservationRs.getInt("spot_id") +
+                        ", Reservation Time: " + reservationRs.getTimestamp("reservation_time"));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving data: " + e.getMessage());
+        }
+    }
+}
+
